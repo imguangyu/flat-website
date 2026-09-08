@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base target="_blank">
+  <meta name="description" content="FLAT: Resampling Image and Text into Flexible-Length Aligned Transmodal Tokens">
+  <title>FLAT — Flexible-Length Aligned Transmodal Tokens</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&amp;family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&amp;display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #f6f7f9;
+      --surface: #ffffff;
+      --surface-hover: #f0f2f6;
+      --text-primary: #20242c;
+      --text-secondary: #505763;
+      --text-muted: #737b88;
+      --border: #dfe3e8;
+      --border-strong: #c3c9d2;
+      --primary: #5256a6;
+      --primary-soft: #e8e9f7;
+      --accent: #287e77;
+      --font-body: "Libre Franklin", sans-serif;
+      --font-display: "Source Serif 4", Georgia, serif;
+    }
+    body.dark-mode {
+      --bg: #15161c;
+      --bg-alt: #1d1f27;
+      --surface: #22242d;
+      --surface-hover: #2a2c37;
+      --text-primary: #f1f1f4;
+      --text-secondary: #c2c3cb;
+      --text-muted: #92949f;
+      --border: #383a45;
+      --border-strong: #565968;
+      --primary: #a3a5e5;
+      --primary-soft: #30324b;
+      --accent: #7bc8c2;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 58px; }
+    body {
+      margin: 0;
+      color: var(--text-primary);
+      background: var(--bg);
+      font-family: var(--font-body);
+      font-size: 15.5px;
+      line-height: 1.68;
+    }
+    a { color: var(--primary); text-underline-offset: 3px; }
+    img { display: block; width: 100%; height: auto; }
+    .container { width: min(1010px, calc(100% - 36px)); margin: 0 auto; }
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(130, 135, 150, .2);
+      background: color-mix(in srgb, var(--surface) 86%, transparent);
+      backdrop-filter: blur(12px);
+    }
+    .navbar .container {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-right: 76px;
+    }
+    .brand { color: var(--text-primary); font-size: 1rem; font-weight: 700; letter-spacing: .08em; text-decoration: none; }
+    .navlinks { display: flex; gap: 21px; }
+    .navlinks a { color: var(--text-secondary); font-size: .84rem; font-weight: 500; text-decoration: none; }
+    .navlinks a:hover { color: var(--primary); }
+    .headline {
+      padding: 76px 0 62px;
+      background: linear-gradient(112deg, #dceafa 0%, #e8e6f7 52%, #f8e4ed 100%);
+      text-align: center;
+    }
+    body.dark-mode .headline { background: linear-gradient(105deg, #243242, #2d2e4b 52%, #412b38); }
+    h1, h2, h3 { font-family: var(--font-display); line-height: 1.2; }
+    h1 { margin: 0; font: 700 clamp(3.7rem, 9vw, 6.4rem)/.95 var(--font-body); letter-spacing: -.065em; }
+    .project-name { color: var(--primary); }
+    .version-switch {
+      display: inline-flex;
+      margin: 0 auto 24px;
+      padding: 3px;
+      border: 1px solid rgba(82, 86, 166, .25);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .58);
+      box-shadow: 0 3px 12px rgba(55, 59, 110, .07);
+    }
+    .version-tab {
+      min-width: 76px;
+      padding: 6px 16px;
+      border-radius: 999px;
+      color: var(--text-secondary);
+      font-size: .78rem;
+      font-weight: 600;
+      line-height: 1.2;
+      text-decoration: none;
+    }
+    .version-tab.active { background: var(--primary); color: #fff; }
+    .version-tab:not(.active):hover { background: rgba(255, 255, 255, .72); color: var(--primary); }
+    .version-tab.disabled { color: var(--text-muted); cursor: default; opacity: .62; }
+    .version-tab.disabled:hover { background: transparent; color: var(--text-muted); }
+    .paper-title { max-width: 920px; margin: 22px auto 0; font-size: clamp(1.35rem, 2.65vw, 1.85rem); line-height: 1.28; font-weight: 600; }
+    .authors { margin: 21px 0 0; color: var(--text-secondary); font-size: .95rem; }
+    .links { margin-top: 24px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 39px;
+      padding: 0 17px;
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text-primary);
+      font-size: .86rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform .14s ease, border-color .14s ease;
+    }
+    .button:hover { border-color: var(--primary); transform: translateY(-1px); }
+    .button.placeholder { color: var(--text-muted); cursor: default; }
+    .section { padding: 66px 0; scroll-margin-top: 50px; }
+    .section.light { background: var(--bg-alt); }
+    .section-title { margin: 0 0 22px; text-align: center; font-size: clamp(1.75rem, 3vw, 2.15rem); }
+    .section-subtitle { max-width: 820px; margin: -8px auto 30px; color: var(--text-secondary); text-align: center; font-size: 1rem; }
+    .content { max-width: 850px; margin: 0 auto; }
+    .content p { margin: 0 0 16px; }
+    figure { margin: 30px 0 0; }
+    figure img { background: #fff; }
+    .figure-frame { overflow: hidden; padding: 14px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+    figcaption { max-width: 900px; margin: 12px auto 0; color: var(--text-secondary); font-size: .88rem; line-height: 1.55; text-align: left; }
+    .teaser { padding: 40px 0 58px; }
+    .teaser figure { margin-top: 0; }
+    .teaser figcaption { max-width: 940px; text-align: center; }
+    .method-figure { max-width: 900px; margin-inline: auto; }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      margin: 33px 0 0;
+      border-block: 1px solid var(--border);
+    }
+    .metric { padding: 18px 10px 17px; text-align: center; }
+    .metric + .metric { border-left: 1px solid var(--border); }
+    .metric strong { display: block; color: var(--primary); font-size: 1.48rem; line-height: 1.2; }
+    .metric span { display: block; margin-top: 5px; color: var(--text-muted); font-size: .72rem; line-height: 1.35; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: start; }
+    .two-col.asymmetric { grid-template-columns: .78fr 1.22fr; align-items: center; }
+    .result-note { color: var(--text-secondary); }
+    .subsection { margin-top: 52px; }
+    .subsection:first-child { margin-top: 0; }
+    .subsection h3 { margin: 0 0 9px; font-size: 1.25rem; }
+    .subsection > p { margin: 0; color: var(--text-secondary); }
+    .result-table { width: 100%; border-collapse: collapse; font-size: .8rem; line-height: 1.35; }
+    .result-table th, .result-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); text-align: right; }
+    .result-table th:first-child, .result-table td:first-child { text-align: left; }
+    .result-table thead th { color: var(--text-muted); font-weight: 600; }
+    .result-table tbody tr:last-child td { border-bottom: 0; }
+    .table-wrap { overflow-x: auto; margin-top: 20px; border-block: 1px solid var(--border-strong); }
+    .stat-line { margin: 18px 0 0; color: var(--text-secondary); font-size: .88rem; }
+    .stat-line strong { color: var(--text-primary); }
+    .video-grid { display: grid; grid-template-columns: 1fr; gap: 36px; max-width: 880px; margin: 27px auto 0; }
+    .video-grid figure { margin: 0; }
+    .gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+    .gallery-grid figure { margin-top: 0; }
+    .compact-figure { max-width: 880px; margin-inline: auto; }
+    .eyebrow { margin-bottom: 10px; color: var(--primary); font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .k-pill { display: inline-block; padding: 1px 7px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: .78em; font-weight: 700; }
+    pre {
+      margin: 22px 0 0;
+      padding: 18px 20px;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: var(--bg-alt);
+      color: var(--text-secondary);
+      font: .78rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+      white-space: pre-wrap;
+    }
+    footer { padding: 28px 0 34px; border-top: 1px solid var(--border); color: var(--text-muted); text-align: center; font-size: .72rem; }
+    @keyframes enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    .headline .container > * { animation: enter .55s both; }
+    .headline .paper-title { animation-delay: .08s; }
+    .headline .authors { animation-delay: .14s; }
+    .headline .links { animation-delay: .2s; }
+    @media (max-width: 760px) {
+      .navlinks { display: none; }
+      .headline { padding: 54px 0 42px; }
+      .section { padding: 44px 0; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .metric:nth-child(odd) { border-left: 0; }
+      .metric:nth-child(n+3) { border-top: 1px solid var(--border); }
+      .metric:last-child { grid-column: 1 / -1; border-left: 0; }
+      .two-col, .two-col.asymmetric, .video-grid, .gallery-grid { grid-template-columns: 1fr; }
+      .figure-frame { padding: 7px; border-radius: 5px; }
+    }
+  </style>
+  <style>
+/* === INFRASTRUCTURE STYLES — customize colors via CSS custom properties === */
+
+.viz-menu {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10000;
+    font-family: inherit;
+}
+
+.viz-menu-toggle {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--border, #e2e8f0);
+    background: var(--surface, #fff);
+    color: var(--text-secondary, #64748b);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.viz-menu-toggle:hover {
+    background: var(--surface-hover, #f8fafc);
+    border-color: var(--border-strong, #cbd5e1);
+    transform: scale(1.05);
+}
+
+.viz-menu-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 200px;
+    background: var(--surface, #fff);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 10px;
+    padding: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+    pointer-events: none;
+    transition: opacity 0.15s, transform 0.15s;
+}
+.viz-menu.open .viz-menu-panel {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.viz-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-primary, #0f172a);
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.1s;
+    font-family: inherit;
+}
+.viz-menu-item:hover {
+    background: var(--surface-hover, #f1f5f9);
+}
+
+.viz-menu-icon {
+    width: 20px;
+    text-align: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+/* === Scroll-triggered reveal animations === */
+[data-animate] {
+    opacity: 0;
+    transition-property: opacity, transform, filter;
+    transition-duration: 0.6s;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-animate="fade-up"] { transform: translateY(20px); }
+[data-animate="fade-down"] { transform: translateY(-20px); }
+[data-animate="fade-left"] { transform: translateX(-20px); }
+[data-animate="fade-right"] { transform: translateX(20px); }
+[data-animate="scale-up"] { transform: scale(0.95); }
+[data-animate="blur-in"] { filter: blur(8px); }
+
+[data-animate].is-visible {
+    opacity: 1;
+    transform: none;
+    filter: none;
+}
+
+/* Print styles */
+@media print {
+    .viz-menu { display: none !important; }
+    body { background: white !important; color: black !important; }
+    .dark-mode { all: unset; }
+    .card, .section, section { break-inside: avoid; }
+    .animate-in { opacity: 1 !important; animation: none !important; }
+    [data-animate] { opacity: 1 !important; transform: none !important; filter: none !important; transition: none !important; }
+    @page { margin: 1.5cm; }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    [data-animate] {
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+        transition: none !important;
+    }
+}
+</style>
+</head>
+<body>
+  <nav class="viz-menu" id="vizMenu" aria-label="Visualization controls">
+    <button class="viz-menu-toggle" onclick="toggleMenu()" aria-label="Toggle menu" aria-expanded="false">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="5" x2="15" y2="5"/>
+            <line x1="3" y1="9" x2="15" y2="9"/>
+            <line x1="3" y1="13" x2="15" y2="13"/>
+        </svg>
+    </button>
+    <div class="viz-menu-panel" id="vizMenuPanel">
+        <button onclick="toggleTheme()" class="viz-menu-item">
+            <span class="viz-menu-icon" id="themeIcon">◐</span>
+            <span id="themeLabel">Toggle dark mode</span>
+        </button>
+        <button onclick="window.print()" class="viz-menu-item">
+            <span class="viz-menu-icon">⎙</span>
+            <span>Print / Save as PDF</span>
+        </button>
+        <button onclick="toggleFullscreen()" class="viz-menu-item">
+            <span class="viz-menu-icon" id="fsIcon">⛶</span>
+            <span id="fsLabel">Fullscreen</span>
+        </button>
+        <hr style="border:none;border-top:1px solid var(--border,#e2e8f0);margin:2px 8px">
+        <button onclick="saveAsImage()" class="viz-menu-item" id="saveImgBtn">
+            <span class="viz-menu-icon">📷</span>
+            <span>Save as image</span>
+        </button>
+    </div>
+</nav>
+  <nav class="navbar">
+    <div class="container">
+      <a class="brand" href="#top" target="_self">FLAT</a>
+      <div class="navlinks">
+        <a href="#overview" target="_self">Overview</a>
+        <a href="#method" target="_self">Method</a>
+        <a href="#results" target="_self">Results</a>
+        <a href="#analysis" target="_self">Analysis</a>
+        <a href="#transfer" target="_self">Transfer</a>
+        <a href="#bibtex" target="_self">BibTeX</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="headline" id="top">
+    <div class="container">
+      <div class="version-switch" aria-label="Representation type">
+        <span class="version-tab active" aria-current="page">Soft</span>
+        <span class="version-tab disabled" aria-disabled="true">Hard</span>
+      </div>
+      <h1 class="project-name">FLAT</h1>
+      <h2 class="paper-title">Resampling Image and Text into 1D Flexible-Length Aligned Transmodal Tokens for Retrieval and Generation</h2>
+      <p class="authors">Anonymous authors</p>
+      <div class="links">
+        <span class="button placeholder" aria-disabled="true">Paper</span>
+        <span class="button placeholder">Code · coming soon</span>
+        <span class="button placeholder">Models · coming soon</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="teaser">
+      <div class="container">
+        <figure data-animate="fade-up">
+          <img src="assets/fig_teaser.png" alt="FLAT represents image and text with one shared flexible-length sequence." fetchpriority="high">
+          <figcaption><strong>One representation, multiple capabilities.</strong> FLAT maps images and text into a shared sequence of continuous tokens. Any prefix can serve as a retrieval embedding or condition bidirectional generation.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section light" id="overview">
+      <div class="container">
+        <h2 class="section-title" data-animate="fade-up">Summary</h2>
+        <div class="content" data-animate="fade-up">
+          <p>Modern multimodal systems usually maintain separate representations for understanding and generation. <strong>FLAT</strong> instead resamples either images or text into the same one-dimensional sequence of continuous tokens, jointly trained for cross-modal alignment, image synthesis, and captioning.</p>
+          <p>Nested dropout organizes information from coarse to fine. At inference time, selecting a prefix of length <em>K</em> provides a direct compute–detail trade-off: the first token already captures global semantics, while longer prefixes recover composition and fine-grained attributes.</p>
+        </div>
+        <div class="metrics" data-animate="fade-up">
+          <div class="metric"><strong>83.1</strong><span>GenEval</span></div>
+          <div class="metric"><strong>138.6</strong><span>COCO CIDEr</span></div>
+          <div class="metric"><strong>86.8 / 75.8</strong><span>COCO I2T / T2I R@5</span></div>
+          <div class="metric"><strong>98.3 / 93.6</strong><span>Flickr I2T / T2I R@5</span></div>
+          <div class="metric"><strong>81.8</strong><span>ImageNet linear probe</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="method">
+      <div class="container">
+        <div class="eyebrow" style="text-align:center" data-animate="fade-up">Architecture</div>
+        <h2 class="section-title" data-animate="fade-up">A shared, ordered token space</h2>
+        <p class="section-subtitle" data-animate="fade-up">A single VLM encoder produces up to 256 continuous 64-dimensional register tokens for either modality.</p>
+        <figure class="method-figure" data-animate="fade-up">
+          <div class="figure-frame"><img src="assets/fig_method.png" alt="FLAT architecture with a shared encoder, register tokens, and three training objectives." loading="lazy"></div>
+          <figcaption>The shared encoder resamples images and captions into aligned register tokens. Contrastive alignment and bidirectional generation jointly shape the latent space; nested dropout trains every prefix to remain useful.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section light" id="results">
+      <div class="container">
+        <div class="eyebrow" style="text-align:center" data-animate="fade-up">Generation</div>
+        <h2 class="section-title" data-animate="fade-up">Coarse-to-fine decoding from any prefix</h2>
+        <p class="section-subtitle" data-animate="fade-up">Increasing <em>K</em> adds compositional detail without switching representations or models.</p>
+        <figure class="compact-figure" data-animate="fade-up">
+          <div class="figure-frame"><img src="assets/fig_geneval.png" alt="Text-to-image synthesis at K equals 1, 4, 16, 64, and 256." loading="lazy"></div>
+          <figcaption><strong>Text-to-image synthesis.</strong> Short prefixes establish the principal concept; longer prefixes resolve counting, spatial relations, and attributes. The task-adapted model reaches <strong>83.1 GenEval</strong>.</figcaption>
+        </figure>
+
+        <div class="subsection">
+          <h3 data-animate="fade-up">Image captioning</h3>
+          <p data-animate="fade-up">The same visual sequence conditions an autoregressive language decoder. Caption quality rises smoothly from <span class="k-pill">K=1</span> to <span class="k-pill">K=256</span>, reaching 40.5 BLEU-4 and 138.6 CIDEr on COCO.</p>
+          <figure class="compact-figure" data-animate="fade-up">
+            <div class="figure-frame"><img src="assets/fig_captioning.png" alt="Image captioning examples across flexible prefix lengths." loading="lazy"></div>
+            <figcaption>Additional registers refine the description while preserving the main visual semantics captured by the earliest token.</figcaption>
+          </figure>
+        </div>
+
+        <div class="subsection">
+          <h3 data-animate="fade-up">Complex text-to-image examples</h3>
+          <figure class="compact-figure" data-animate="fade-up">
+            <div class="figure-frame"><img src="assets/fig_t2i_complex.png" alt="Complex text-to-image examples generated by FLAT." loading="lazy"></div>
+            <figcaption>Qualitative generations cover detailed scenes, stylized compositions, portraits, and unusual concepts beyond the diagnostic GenEval prompts.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="retrieval">
+      <div class="container">
+        <div class="eyebrow" style="text-align:center" data-animate="fade-up">Retrieval</div>
+        <h2 class="section-title" data-animate="fade-up">One token is already competitive</h2>
+        <p class="section-subtitle" data-animate="fade-up">Retrieval remains nearly unchanged across a 256× range in representation width.</p>
+        <div class="two-col asymmetric">
+          <figure data-animate="fade-right">
+            <div class="figure-frame"><img src="assets/fig_retrieval_curve.png" alt="COCO retrieval recall across active dimensions compared with adaptive-width baselines." loading="lazy"></div>
+            <figcaption>COCO R@5 versus active dimensionality. Each FLAT token contributes 64 dimensions.</figcaption>
+          </figure>
+          <div data-animate="fade-left">
+            <div class="table-wrap">
+              <table class="result-table" aria-label="FLAT retrieval performance across prefix lengths">
+                <thead><tr><th>Dataset / K</th><th>I→T R@1</th><th>I→T R@5</th><th>T→I R@1</th><th>T→I R@5</th></tr></thead>
+                <tbody>
+                  <tr><td>COCO / 1</td><td>63.00</td><td>86.44</td><td>47.76</td><td>75.59</td></tr>
+                  <tr><td>COCO / 256</td><td><strong>63.54</strong></td><td><strong>86.82</strong></td><td><strong>47.98</strong></td><td><strong>75.83</strong></td></tr>
+                  <tr><td>Flickr / 1</td><td>90.50</td><td>98.10</td><td>76.94</td><td>93.52</td></tr>
+                  <tr><td>Flickr / 4</td><td><strong>91.20</strong></td><td><strong>98.30</strong></td><td><strong>77.40</strong></td><td>93.58</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="stat-line">Across all reported recall metrics, moving from <strong>K=1</strong> to <strong>K=256</strong> changes COCO performance by less than one point.</p>
+          </div>
+        </div>
+        <div class="gallery-grid subsection">
+          <figure data-animate="fade-right">
+            <div class="figure-frame"><img src="assets/fig_retrieval_i2t.png" alt="Image-to-text retrieval examples." loading="lazy"></div>
+            <figcaption><strong>Image-to-text retrieval.</strong> Green text marks the matched caption and its retrieved rank.</figcaption>
+          </figure>
+          <figure data-animate="fade-left">
+            <div class="figure-frame"><img src="assets/fig_retrieval_t2i.png" alt="Text-to-image retrieval examples." loading="lazy"></div>
+            <figcaption><strong>Text-to-image retrieval.</strong> Retrieved neighbors remain semantically close even when the target is not ranked first.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section light" id="analysis">
+      <div class="container">
+        <div class="eyebrow" style="text-align:center" data-animate="fade-up">Representation analysis</div>
+        <h2 class="section-title" data-animate="fade-up">Aligned geometry with semantic structure</h2>
+        <p class="section-subtitle" data-animate="fade-up">FLAT's continuous tokens are simultaneously cross-modal, discriminative, and decodable.</p>
+        <figure class="compact-figure" data-animate="fade-up">
+          <div class="figure-frame"><img src="assets/fig_modality_gap.png" alt="PCA distributions for matched image and text representations." loading="lazy"></div>
+          <figcaption><strong>Closing the modality gap.</strong> A single FLAT token halves CLIP's image–text centroid distance; the full sequence reduces it to roughly one quarter.</figcaption>
+        </figure>
+        <div class="two-col subsection" style="align-items:center">
+          <figure data-animate="fade-right">
+            <div class="figure-frame"><img src="assets/fig_cluster.png" alt="Unsupervised clustering of a single FLAT token." loading="lazy"></div>
+            <figcaption><strong>Unsupervised structure.</strong> <em>k</em>-means over the frozen 64-D <span class="k-pill">K=1</span> token recovers visually coherent ImageNet categories.</figcaption>
+          </figure>
+          <div data-animate="fade-left">
+            <h3>Linear probing</h3>
+            <p class="result-note">A linear classifier on frozen FLAT features reaches <strong>73.3%</strong> ImageNet-1K top-1 with one 64-D token, <strong>81.2%</strong> with 16 tokens, and <strong>81.8%</strong> with 64 tokens.</p>
+            <div class="table-wrap">
+              <table class="result-table" aria-label="ImageNet linear probing results">
+                <thead><tr><th>K</th><th>Dimensions</th><th>Top-1</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td>64</td><td>73.3</td></tr>
+                  <tr><td>4</td><td>256</td><td>77.0</td></tr>
+                  <tr><td>16</td><td>1,024</td><td>81.2</td></tr>
+                  <tr><td>64</td><td>4,096</td><td><strong>81.8</strong></td></tr>
+                  <tr><td>256</td><td>16,384</td><td><strong>81.8</strong></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3 data-animate="fade-up">Continuous latent operations</h3>
+          <p data-animate="fade-up">Because image and text occupy a shared decodable space, simple vector operations produce interpretable semantic transitions.</p>
+          <figure class="compact-figure" data-animate="fade-up">
+            <div class="figure-frame"><img src="assets/fig_interpolation.png" alt="Continuous cross-modal interpolation between image and text concepts." loading="lazy"></div>
+            <figcaption><strong>Interpolation.</strong> Image and text decoders follow corresponding intermediate concepts along the same latent trajectory.</figcaption>
+          </figure>
+          <figure class="compact-figure" data-animate="fade-up">
+            <div class="figure-frame"><img src="assets/fig_arithmetic.png" alt="Token arithmetic combining a lighthouse and a full moon." loading="lazy"></div>
+            <figcaption><strong>Semantic arithmetic.</strong> Token-wise composition adds the semantics of a full moon to a lighthouse scene; larger prefixes preserve increasingly detailed structure.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="transfer">
+      <div class="container">
+        <div class="eyebrow" style="text-align:center" data-animate="fade-up">Beyond paired image–English training</div>
+        <h2 class="section-title" data-animate="fade-up">Zero-shot transfer</h2>
+        <p class="section-subtitle" data-animate="fade-up">The shared VLM encoder exposes capabilities that were not explicitly supervised by the training mixture.</p>
+
+        <div class="subsection" style="margin-top:0">
+          <h3 data-animate="fade-up">Multilingual and symbolic inputs</h3>
+          <figure class="compact-figure" data-animate="fade-up">
+            <div class="figure-frame"><img src="assets/fig_multilingual.png" alt="Multilingual and emoji prompts decoded by FLAT." loading="lazy"></div>
+            <figcaption>Semantically equivalent English, Chinese, and Spanish prompts produce consistent images. Emoji concepts can also be routed through the shared latent space.</figcaption>
+          </figure>
+        </div>
+
+        <div class="subsection">
+          <h3 data-animate="fade-up">Multi-frame video semantics</h3>
+          <p data-animate="fade-up">Four sampled frames can be jointly encoded into one register sequence. The decoded result fuses concepts distributed across the clip rather than selecting a single keyframe.</p>
+          <div class="video-grid">
+            <figure data-animate="fade-right">
+              <div class="figure-frame"><img src="assets/fig_video.png" alt="Zero-shot captions produced from multiple frames of a video clip." loading="lazy"></div>
+              <figcaption><strong>Video-to-text.</strong> The caption decoder summarizes objects, scenes, and actions across sampled frames.</figcaption>
+            </figure>
+            <figure data-animate="fade-left">
+              <div class="figure-frame"><img src="assets/fig_video_decode.png" alt="Images decoded from joint multi-frame video representations." loading="lazy"></div>
+              <figcaption><strong>Video-to-image.</strong> The generated image combines semantic elements from multiple frames, including clips with substantial temporal variation.</figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <div class="gallery-grid subsection">
+          <figure data-animate="fade-right">
+            <h3>Composed image retrieval</h3>
+            <div class="figure-frame"><img src="assets/fig_cirr.png" alt="Zero-shot composed image retrieval on CIRR." loading="lazy"></div>
+            <figcaption>Reference-image and text-edit embeddings are composed directly in latent space. At <span class="k-pill">K=1</span>, FLAT reaches 44.0 Hit@1 and 75.2 Hit@5.</figcaption>
+          </figure>
+          <figure data-animate="fade-left">
+            <h3>Generalizing to unseen lengths</h3>
+            <div class="figure-frame"><img src="assets/fig_arbitrary_k.png" alt="Generation at trained and unseen prefix lengths." loading="lazy"></div>
+            <figcaption>Although training samples power-of-four prefix lengths, the ordered representation decodes smoothly at unseen values of <em>K</em>.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section light" id="bibtex">
+      <div class="container">
+        <h2 class="section-title" data-animate="fade-up">BibTeX</h2>
+        <pre data-animate="fade-up">@misc{anonymous2026flat,
+  title  = {FLAT: Resampling Image and Text into 1D Flexible-Length
+            Aligned Transmodal Tokens for Retrieval and Generation},
+  author = {Anonymous Authors},
+  year   = {2026}
+}</pre>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div>FLAT project page · Anonymous authors</div>
+  </footer>
+
+  <script>
+// Menu toggle
+function toggleMenu() {
+    const menu = document.getElementById('vizMenu');
+    const toggle = menu.querySelector('.viz-menu-toggle');
+    const isOpen = menu.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', isOpen);
+}
+
+// Close menu on outside click or Escape
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('vizMenu');
+    if (menu && !menu.contains(e.target)) menu.classList.remove('open');
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const menu = document.getElementById('vizMenu');
+        if (menu) menu.classList.remove('open');
+    }
+});
+
+// Theme toggle with persistence
+function toggleTheme() {
+    const isDark = document.body.classList.toggle('dark-mode');
+    // localStorage may throw a SecurityError in sandboxed iframe contexts.
+    // Swallow it so a persistence failure never aborts the rest of this infra script —
+    // an unguarded throw here leaves every [data-animate] element at opacity:0 (blank page).
+    try { localStorage.setItem('visualize-dark-mode', isDark); } catch (e) {}
+    updateThemeLabel();
+}
+function updateThemeLabel() {
+    const isDark = document.body.classList.contains('dark-mode');
+    const icon = document.getElementById('themeIcon');
+    const label = document.getElementById('themeLabel');
+    if (icon) icon.textContent = isDark ? '☀' : '◐';
+    if (label) label.textContent = isDark ? 'Light mode' : 'Dark mode';
+}
+
+// Auto-apply saved theme or system preference.
+// Read once behind try/catch: localStorage access throws in sandboxed iframes, and an
+// unguarded throw here aborts script execution before the scroll-reveal observer below is
+// ever set up — leaving all [data-animate] content hidden (the blank-page failure mode).
+let savedTheme = null;
+try { savedTheme = localStorage.getItem('visualize-dark-mode'); } catch (e) {}
+if (savedTheme === 'true' ||
+    (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark-mode');
+}
+updateThemeLabel();
+
+// Fullscreen toggle
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+        document.exitFullscreen();
+    }
+}
+document.addEventListener('fullscreenchange', function() {
+    const icon = document.getElementById('fsIcon');
+    const label = document.getElementById('fsLabel');
+    const isFs = !!document.fullscreenElement;
+    if (icon) icon.textContent = isFs ? '⛶' : '⛶';
+    if (label) label.textContent = isFs ? 'Exit fullscreen' : 'Fullscreen';
+});
+
+// Scroll-triggered reveal animations
+(function initScrollReveal() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.querySelectorAll('[data-animate]').forEach(function(el) {
+            el.classList.add('is-visible');
+        });
+        return;
+    }
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                var el = entry.target;
+                var delay = parseInt(el.getAttribute('data-delay') || '0', 10);
+                var duration = el.getAttribute('data-duration');
+                if (duration) el.style.transitionDuration = duration + 'ms';
+                if (delay > 0) {
+                    setTimeout(function() { el.classList.add('is-visible'); }, delay);
+                } else {
+                    el.classList.add('is-visible');
+                }
+                observer.unobserve(el);
+            }
+        });
+    // threshold 0 + a negative bottom rootMargin keys the trigger to the element's top
+    // edge crossing ~85% of the viewport, independent of element height. A ratio-based
+    // threshold cannot work here: an element taller than 1/threshold viewports can never
+    // reach that ratio, so it would stay at opacity:0 forever (the blank-content failure).
+    }, { threshold: 0, rootMargin: '0px 0px -15% 0px' });
+    document.querySelectorAll('[data-animate]').forEach(function(el) {
+        observer.observe(el);
+    });
+
+    // Safety net: a reveal that never fires must degrade to visible, not invisible.
+    // Anything still hidden once the page has settled, but sitting above the fold's
+    // bottom edge, is shown unconditionally. Deferred past the longest plausible
+    // data-delay so the stagger still plays; the standalone timer covers pages where
+    // `load` never fires (a stalled font, image, or CDN script).
+    function revealStalled() {
+        document.querySelectorAll('[data-animate]:not(.is-visible)').forEach(function(el) {
+            if (el.getBoundingClientRect().top < window.innerHeight) {
+                el.classList.add('is-visible');
+            }
+        });
+    }
+    window.addEventListener('load', function() { setTimeout(revealStalled, 1000); });
+    setTimeout(revealStalled, 3000);
+})();
+
+// Slide deck hash navigation (auto-detected)
+// If the page has .slide elements, sync the URL hash with the current slide number.
+// Supports: #3 to jump to slide 3 on load, hash updates on navigation,
+// and hashchange events for manual URL edits.
+// Uses MutationObserver to detect slide changes — works regardless of how
+// navigation is triggered (onclick, keyboard closure, or window.goSlide).
+(function initSlideHash() {
+    var slides = document.querySelectorAll('.slide');
+    if (slides.length < 2) return; // Not a slide deck
+
+    // Track active slide and sync hash via MutationObserver
+    var lastHash = '';
+    function syncHash() {
+        for (var i = 0; i < slides.length; i++) {
+            if (slides[i].classList.contains('active')) {
+                var h = '#' + (i + 1);
+                if (h !== lastHash) {
+                    lastHash = h;
+                    history.replaceState(null, '', h);
+                }
+                return;
+            }
+        }
+    }
+    var observer = new MutationObserver(syncHash);
+    for (var i = 0; i < slides.length; i++) {
+        observer.observe(slides[i], { attributes: true, attributeFilter: ['class'] });
+    }
+
+    // goToSlide: jump directly to slide n (0-indexed)
+    window.goToSlide = function(n) {
+        if (n < 0 || n >= slides.length) return;
+        var active = document.querySelector('.slide.active');
+        if (active) active.classList.remove('active');
+        slides[n].classList.add('active');
+        // Update counter/progress if present
+        var cur = document.getElementById('current');
+        var total = document.getElementById('total');
+        var progress = document.getElementById('progress');
+        if (cur) cur.textContent = n + 1;
+        if (total) total.textContent = slides.length;
+        if (progress) progress.style.width = ((n + 1) / slides.length * 100) + '%';
+        var prevBtn = document.querySelector('.nav-prev');
+        var nextBtn = document.querySelector('.nav-next');
+        if (prevBtn) prevBtn.disabled = n === 0;
+        if (nextBtn) nextBtn.disabled = n === slides.length - 1;
+    };
+
+    // Listen for manual hash changes
+    window.addEventListener('hashchange', function() {
+        var n = parseInt(location.hash.replace('#', ''), 10);
+        if (n >= 1 && n <= slides.length) window.goToSlide(n - 1);
+    });
+
+    // On initial load, jump to hash slide if specified
+    var startHash = parseInt(location.hash.replace('#', ''), 10);
+    if (startHash >= 1 && startHash <= slides.length) {
+        var active = document.querySelector('.slide.active');
+        if (active) active.classList.remove('active');
+        slides[startHash - 1].classList.add('active');
+        // Defer hash write to avoid interfering with page load
+        setTimeout(function() {
+            history.replaceState(null, '', '#' + startHash);
+            var cur = document.getElementById('current');
+            var progress = document.getElementById('progress');
+            if (cur) cur.textContent = startHash;
+            if (progress) progress.style.width = (startHash / slides.length * 100) + '%';
+            var prevBtn = document.querySelector('.nav-prev');
+            var nextBtn = document.querySelector('.nav-next');
+            if (prevBtn) prevBtn.disabled = startHash === 1;
+            if (nextBtn) nextBtn.disabled = startHash === slides.length;
+        }, 0);
+    }
+})();
+
+// Lazy-load html2canvas on first use (avoids unconditional 140KB CDN request)
+function loadHtml2Canvas() {
+    if (typeof html2canvas !== 'undefined') return Promise.resolve();
+    return new Promise(function(resolve, reject) {
+        var script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        script.integrity = 'sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H';
+        script.crossOrigin = 'anonymous';
+        script.onload = resolve;
+        script.onerror = function() { reject(new Error('html2canvas load failed')); };
+        document.head.appendChild(script);
+    });
+}
+
+// Save as image (full page screenshot via html2canvas)
+//
+// Known html2canvas limitations this function works around:
+// 1. body::before pseudo-elements (gradient backgrounds) — capture .container instead
+// 2. position:fixed elements — captured at wrong position, so capture .container
+// 3. CSS animations with opacity:0 start state — force all to end state before capture
+// 4. Google Fonts loading — wait for document.fonts.ready before capture
+// 5. Canvas size limits — cap scale at 2x for reasonable output size
+// 6. Tainted canvas in iframe contexts: allowTaint must be false so
+//    toDataURL() doesn't throw SecurityError; resources failing CORS are simply omitted
+// 7. Data URL size limits — use toBlob + createObjectURL instead of toDataURL
+// 8. Modern CSS color() function — Chrome 111+ returns color(srgb ...) in computed
+//    styles, which html2canvas 1.4.1 can't parse. Strip in onclone before rendering.
+function saveAsImage() {
+    var btn = document.getElementById('saveImgBtn');
+    var label = btn.querySelector('span:last-child');
+    var origText = label.textContent;
+    label.textContent = 'Loading...';
+    btn.style.pointerEvents = 'none';
+
+    loadHtml2Canvas().then(function() {
+        label.textContent = 'Capturing...';
+        doCapture(btn, label, origText);
+    }).catch(function(err) {
+        console.error('Failed to load html2canvas:', err);
+        label.textContent = origText;
+        btn.style.pointerEvents = '';
+        alert('Could not load screenshot library. Try Print / Save as PDF instead.');
+    });
+}
+
+function doCapture(btn, label, origText) {
+    var menu = document.getElementById('vizMenu');
+    menu.style.display = 'none';
+
+    // 1. Find content container (avoids body::before and fixed-position issues)
+    var target = document.querySelector('.container')
+        || document.querySelector('main')
+        || document.querySelector('[role="main"]')
+        || document.body;
+
+    // 2. Inject override styles: force animated elements to their final visible state,
+    //    disable all transitions/animations so html2canvas sees static content
+    var overrideStyle = document.createElement('style');
+    overrideStyle.id = 'html2canvas-capture-overrides';
+    overrideStyle.textContent = [
+        // Force all animated/transitioning content to be fully visible and static
+        '*, *::before, *::after {',
+        '  animation-play-state: paused !important;',
+        '  animation-delay: 0s !important;',
+        '  animation-duration: 0s !important;',
+        '  transition-duration: 0s !important;',
+        '}',
+        // Common animation class patterns used by /visualize outputs
+        '.ani, .animate-in, [class*="delay-"],',
+        '.d1,.d2,.d3,.d4,.d5,.d6,.d7,.d8,.d9,.d10,',
+        '[data-animate] {',
+        '  opacity: 1 !important;',
+        '  transform: none !important;',
+        '  filter: none !important;',
+        '}',
+        // Keep the menu panel hidden during capture
+        '.viz-menu-panel { opacity: 0 !important; pointer-events: none !important; }',
+    ].join('\n');
+    document.head.appendChild(overrideStyle);
+
+    // 3. Give the target a solid background (body::before gradients won't be captured)
+    var origBg = target.style.background;
+    if (target !== document.body) {
+        target.style.background = getComputedStyle(document.body).backgroundColor || '#ffffff';
+    }
+
+    // 4. Scroll to top
+    var scrollPos = window.scrollY;
+    window.scrollTo(0, 0);
+
+    // 5. Wait for fonts to load, then capture
+    var capture = function() {
+        // Force layout recalc after style overrides
+        void target.offsetHeight;
+
+        // Patch window.getComputedStyle to convert CSS color() values to rgba().
+        // html2canvas 1.4.1 can't parse color() — Chrome 111+ uses it in
+        // computed styles. html2canvas uses the MAIN window's getComputedStyle
+        // (not the cloned iframe's), so we must patch it here.
+        // Restored in .finally() below.
+        var origGCS = window.getComputedStyle;
+        if (typeof Proxy !== 'undefined') {
+            var cvs = document.createElement('canvas');
+            cvs.width = cvs.height = 1;
+            var ctx = cvs.getContext('2d');
+            function fixColor(val) {
+                if (typeof val !== 'string' || val.indexOf('color(') === -1) return val;
+                ctx.clearRect(0, 0, 1, 1);
+                ctx.fillStyle = 'rgba(0,0,0,0)';
+                ctx.fillStyle = val;
+                ctx.fillRect(0, 0, 1, 1);
+                var d = ctx.getImageData(0, 0, 1, 1).data;
+                return 'rgba(' + d[0] + ',' + d[1] + ',' + d[2] + ',' + (d[3] / 255).toFixed(3) + ')';
+            }
+            window.getComputedStyle = function(el, pseudo) {
+                var style = origGCS.call(this, el, pseudo);
+                return new Proxy(style, {
+                    get: function(target, prop) {
+                        if (prop === 'getPropertyValue') {
+                            return function(name) { return fixColor(target.getPropertyValue(name)); };
+                        }
+                        var v = target[prop];
+                        if (typeof v === 'function') return v.bind(target);
+                        return fixColor(v);
+                    }
+                });
+            };
+        }
+
+        html2canvas(target, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: false,
+            logging: false,
+            onclone: function(clonedDoc) {
+                // In the cloned document, ensure all elements are visible
+                var els = clonedDoc.querySelectorAll('.ani, .animate-in, [class*="delay-"], [data-animate]');
+                for (var i = 0; i < els.length; i++) {
+                    els[i].style.opacity = '1';
+                    els[i].style.transform = 'none';
+                    els[i].style.filter = 'none';
+                }
+            }
+        }).then(function(canvas) {
+            var filename = (document.title || 'visualization') + '.png';
+            // Use toBlob + createObjectURL instead of toDataURL to avoid:
+            // - Data URL size limits (~2MB in Chrome)
+            // - Silent failures with <a download>.click() in sandboxed iframes
+            canvas.toBlob(function(blob) {
+                if (!blob) {
+                    alert('Screenshot failed. Try Print / Save as PDF instead.');
+                    return;
+                }
+                var url = URL.createObjectURL(blob);
+                var link = document.createElement('a');
+                link.download = filename;
+                link.href = url;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                // Revoke after a short delay to ensure download starts
+                setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+            }, 'image/png');
+        }).catch(function(err) {
+            console.error('Screenshot failed:', err);
+            alert('Screenshot failed. Try Print / Save as PDF instead.');
+        }).finally(function() {
+            // Restore everything
+            window.getComputedStyle = origGCS;
+            overrideStyle.remove();
+            target.style.background = origBg;
+            menu.style.display = '';
+            label.textContent = origText;
+            btn.style.pointerEvents = '';
+            menu.classList.remove('open');
+            window.scrollTo(0, scrollPos);
+        });
+    };
+
+    // Use Font Loading API if available, otherwise fall back to timeout
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function() {
+            setTimeout(capture, 50);
+        });
+    } else {
+        setTimeout(capture, 500);
+    }
+}
+</script>
+</body>
+</html>
