@@ -1,0 +1,292 @@
+{
+  "schema_version": 1,
+  "name": "FLAT static demo precompute",
+  "description": "Preset-only asset plan derived from the public-facing dynamic Streamlit demo.",
+  "models": [
+    {
+      "id": "flex-arm-ft",
+      "label": "FLAT · continuous",
+      "native_registers": 256,
+      "representation": "continuous"
+    }
+  ],
+  "defaults": {
+    "k_values": [
+      1,
+      4,
+      16,
+      64,
+      256
+    ],
+    "flow_steps": 20,
+    "guidance": 3.0,
+    "seed": 0,
+    "caption_max_new_tokens": 48,
+    "interpolation_points": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ]
+  },
+  "tasks": {
+    "text_to_image": {
+      "k_values": [
+        1,
+        4,
+        16,
+        64,
+        256
+      ],
+      "examples": [
+        {
+          "id": "snowy-greenhouse",
+          "label": "Snowy greenhouse",
+          "prompt": "A glass greenhouse glowing softly in a snowy forest at dusk"
+        },
+        {
+          "id": "treehouse-library",
+          "label": "Treehouse library",
+          "prompt": "A vast library carved inside an ancient tree, with spiral staircases and warm lantern light"
+        },
+        {
+          "id": "rainy-tram",
+          "label": "Rainy tram",
+          "prompt": "A vintage yellow tram crossing a rain-soaked street lined with neon signs at night"
+        },
+        {
+          "id": "red-panda-baker",
+          "label": "Red panda baker",
+          "prompt": "A red panda kneading bread dough in a cozy sunlit bakery"
+        },
+        {
+          "id": "desert-terrarium",
+          "label": "Desert terrarium",
+          "prompt": "A glass terrarium containing a miniature desert city with tiny wind turbines"
+        },
+        {
+          "id": "aurora-campsite",
+          "label": "Aurora campsite",
+          "prompt": "An astronaut sitting beside a small campfire beneath a vivid aurora on an alien planet"
+        },
+        {
+          "id": "tea-field-railway",
+          "label": "Tea-field railway",
+          "prompt": "A miniature steam train winding through terraced tea fields at sunrise"
+        },
+        {
+          "id": "origami-forest",
+          "label": "Origami forest",
+          "prompt": "An orange origami fox walking through a layered paper forest under a crescent moon"
+        },
+        {
+          "id": "cliffside-lighthouse",
+          "label": "Cliffside lighthouse",
+          "prompt": "A white lighthouse on a dramatic cliff above turquoise waves during golden hour"
+        },
+        {
+          "id": "mechanical-butterfly",
+          "label": "Mechanical butterfly",
+          "prompt": "A macro photograph of a delicate mechanical butterfly made of brass and blue glass"
+        },
+        {
+          "id": "corgi-scooter",
+          "label": "Corgi scooter",
+          "prompt": "Two corgis wearing yellow raincoats riding together on a red scooter"
+        },
+        {
+          "id": "still-life",
+          "label": "Still life",
+          "prompt": "A cobalt-blue ceramic teapot with three oranges on a red-and-white checkered cloth"
+        }
+      ]
+    },
+    "image_captioning": {
+      "k_values": [
+        1,
+        4,
+        16,
+        64,
+        256
+      ],
+      "examples": [
+        {
+          "id": "cat-table",
+          "label": "Cat at a table",
+          "file": "coco_cat_table.jpg"
+        },
+        {
+          "id": "elephant-tree",
+          "label": "Elephant beneath a tree",
+          "file": "coco_elephant_tree.jpg"
+        },
+        {
+          "id": "blue-airplane",
+          "label": "Blue model airplane",
+          "file": "coco_blue_airplane.jpg"
+        },
+        {
+          "id": "red-train",
+          "label": "Red locomotive",
+          "file": "coco_red_train.jpg"
+        },
+        {
+          "id": "dogs-frisbee",
+          "label": "Dogs playing with a frisbee",
+          "file": "coco_dogs_frisbee.jpg"
+        },
+        {
+          "id": "oranges",
+          "label": "Pile of oranges",
+          "file": "coco_oranges.jpg"
+        },
+        {
+          "id": "kitchen",
+          "label": "Kitchen utensil rack",
+          "file": "coco_kitchen.jpg"
+        },
+        {
+          "id": "birds-water",
+          "label": "Birds over water",
+          "file": "coco_birds.jpg"
+        }
+      ]
+    },
+    "interpolation": {
+      "k_values": [
+        1,
+        4,
+        16,
+        64,
+        256
+      ],
+      "points": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "generate_captions": true,
+      "examples": [
+        {
+          "id": "sports-car-sailboat",
+          "label": "Sports car → sailboat",
+          "start": "A red sports car on a city street",
+          "end": "A blue sailboat on the ocean"
+        },
+        {
+          "id": "sunflower-jellyfish",
+          "label": "Sunflower → jellyfish",
+          "start": "A radiant sunflower against a clear blue sky",
+          "end": "A translucent jellyfish glowing in the deep ocean"
+        },
+        {
+          "id": "snowy-cabin-beach-house",
+          "label": "Snowy cabin → beach house",
+          "start": "A wooden cabin surrounded by snow-covered pine trees",
+          "end": "A bright tropical beach house surrounded by palm trees"
+        },
+        {
+          "id": "fox-owl",
+          "label": "Fox → owl",
+          "start": "A red fox standing in an autumn forest",
+          "end": "A white owl perched in a snowy forest"
+        },
+        {
+          "id": "castle-future-city",
+          "label": "Castle → future city",
+          "start": "A watercolor painting of a medieval castle on a hill",
+          "end": "A cinematic futuristic city of glass towers at night"
+        },
+        {
+          "id": "teapot-vase",
+          "label": "Teapot → vase",
+          "start": "A blue ceramic teapot on a wooden table",
+          "end": "A clear glass vase filled with wildflowers on a wooden table"
+        }
+      ]
+    },
+    "latent_arithmetic": {
+      "k_values": [
+        1,
+        4,
+        16,
+        64,
+        256
+      ],
+      "term_preview_k": 256,
+      "generate_stage_images": true,
+      "generate_final_captions": true,
+      "examples": [
+        {
+          "id": "car-image-image",
+          "label": "Image–image · change color",
+          "operation_label": "image–image",
+          "terms": [
+            {
+              "sign": 1,
+              "modality": "image",
+              "text": "A red sports car parked on a city street"
+            },
+            {
+              "sign": -1,
+              "modality": "image",
+              "text": "The color red"
+            },
+            {
+              "sign": 1,
+              "modality": "image",
+              "text": "The color yellow"
+            }
+          ]
+        },
+        {
+          "id": "lighthouse-image-text",
+          "label": "Image–text · change time of day",
+          "operation_label": "image–text",
+          "terms": [
+            {
+              "sign": 1,
+              "modality": "image",
+              "text": "A lighthouse beside the ocean at sunrise"
+            },
+            {
+              "sign": -1,
+              "modality": "text",
+              "text": "Sunrise"
+            },
+            {
+              "sign": 1,
+              "modality": "text",
+              "text": "A large full moon at night"
+            }
+          ]
+        },
+        {
+          "id": "dog-hat-sunglasses",
+          "label": "Text–text · replace an attribute",
+          "operation_label": "text–text",
+          "terms": [
+            {
+              "sign": 1,
+              "modality": "text",
+              "text": "A white dog wearing a black hat"
+            },
+            {
+              "sign": -1,
+              "modality": "text",
+              "text": "A black hat"
+            },
+            {
+              "sign": 1,
+              "modality": "text",
+              "text": "Sunglasses"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

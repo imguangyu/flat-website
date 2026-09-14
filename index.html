@@ -105,7 +105,8 @@
     .version-tab.disabled { color: var(--text-muted); cursor: default; opacity: .62; }
     .version-tab.disabled:hover { background: transparent; color: var(--text-muted); }
     .paper-title { max-width: 920px; margin: 22px auto 0; font-size: clamp(1.35rem, 2.65vw, 1.85rem); line-height: 1.28; font-weight: 600; }
-    .authors { margin: 21px 0 0; color: var(--text-secondary); font-size: .95rem; }
+    .authors { max-width: 920px; margin: 21px auto 0; color: var(--text-secondary); font-size: .95rem; line-height: 1.65; }
+    .affiliation { margin: 5px 0 0; color: var(--text-muted); font-size: .86rem; font-weight: 600; }
     .links { margin-top: 24px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
     .button {
       display: inline-flex;
@@ -124,6 +125,8 @@
     }
     .button:hover { border-color: var(--primary); transform: translateY(-1px); }
     .button.placeholder { color: var(--text-muted); cursor: default; }
+    .button.demo-live { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .button.demo-live:hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 88%, #000); }
     .section { padding: 66px 0; scroll-margin-top: 50px; }
     .section.light { background: var(--bg-alt); }
     .section-title { margin: 0 0 22px; text-align: center; font-size: clamp(1.75rem, 3vw, 2.15rem); }
@@ -324,6 +327,8 @@
     }
 }
 </style>
+  <link rel="stylesheet" href="static-demo/demo.css">
+  <script defer src="static-demo/demo.js"></script>
 </head>
 <body>
   <nav class="viz-menu" id="vizMenu" aria-label="Visualization controls">
@@ -360,6 +365,7 @@
       <div class="navlinks">
         <a href="#overview" target="_self">Overview</a>
         <a href="#method" target="_self">Method</a>
+        <a href="#demo" target="_self">Demo</a>
         <a href="#results" target="_self">Results</a>
         <a href="#analysis" target="_self">Analysis</a>
         <a href="#transfer" target="_self">Transfer</a>
@@ -376,8 +382,10 @@
       </div>
       <h1 class="project-name">FLAT</h1>
       <h2 class="paper-title">Resampling Image and Text into 1D Flexible-Length Aligned Transmodal Tokens for Retrieval and Generation</h2>
-      <p class="authors">Anonymous authors</p>
+      <p class="authors">Guangyu Sun, Shlok Kumar Mishra, Wentao Bao, Robert Zhenheng Yang, Xiao Wang, Xiyuan Wang, Junrong Mayu, Chen Yuan, Max Xiangjun Fan, Jun Xiao, Jianpeng Cheng</p>
+      <p class="affiliation">Meta AI</p>
       <div class="links">
+        <a class="button demo-live" href="#demo" target="_self">Explore Demo ↓</a>
         <span class="button placeholder" aria-disabled="true">Paper</span>
         <span class="button placeholder">Code · coming soon</span>
         <span class="button placeholder">Models · coming soon</span>
@@ -421,6 +429,50 @@
           <div class="figure-frame"><img src="assets/fig_method.png" alt="FLAT architecture with a shared encoder, register tokens, and three training objectives." loading="lazy"></div>
           <figcaption>The shared encoder resamples images and captions into aligned register tokens. Contrastive alignment and bidirectional generation jointly shape the latent space; nested dropout trains every prefix to remain useful.</figcaption>
         </figure>
+      </div>
+    </section>
+
+    <section class="section flat-demo-section" id="demo">
+      <div class="demo-container">
+        <div class="demo-heading" data-animate="fade-up">
+          <div class="eyebrow">Interactive static demo</div>
+          <h2 class="section-title">One prefix, two decoded views</h2>
+          <p class="section-subtitle">Move the slider to vary the number of active FLAT tokens, then compare how the same ordered representation supports generation, captioning, interpolation, and arithmetic.</p>
+        </div>
+
+        <div class="flat-demo-shell" data-animate="fade-up" aria-live="polite">
+          <div class="flat-demo-taskbar" id="flat-demo-taskbar" role="tablist" aria-label="Demo task">
+            <button class="flat-demo-task active" type="button" role="tab" aria-selected="true" data-task="text_to_image">Text → Image</button>
+            <button class="flat-demo-task" type="button" role="tab" aria-selected="false" data-task="image_captioning">Image → Text</button>
+            <button class="flat-demo-task" type="button" role="tab" aria-selected="false" data-task="interpolation">Interpolation</button>
+            <button class="flat-demo-task" type="button" role="tab" aria-selected="false" data-task="latent_arithmetic">Latent arithmetic</button>
+          </div>
+
+          <div class="flat-demo-toolbar">
+            <div>
+              <span class="flat-demo-label">Example</span>
+              <div class="flat-demo-examples" id="flat-demo-examples">
+                <span class="flat-demo-loading">Loading examples…</span>
+              </div>
+            </div>
+            <div class="flat-demo-model">FLAT · continuous</div>
+          </div>
+
+          <div class="flat-demo-controls">
+            <div class="flat-demo-slider-head">
+              <span class="flat-demo-label">Active prefix length</span>
+              <output id="flat-demo-k-output" for="flat-demo-k">K = 1 · 64 dimensions</output>
+            </div>
+            <input id="flat-demo-k" class="flat-demo-slider" type="range" min="0" max="4" step="1" value="0" aria-label="Active FLAT prefix length">
+            <div class="flat-demo-ticks" id="flat-demo-ticks" aria-hidden="true"></div>
+          </div>
+
+          <div class="flat-demo-stage" id="flat-demo-stage" role="tabpanel">
+            <div class="flat-demo-stage-loading">Loading precomputed outputs…</div>
+          </div>
+
+          <p class="flat-demo-status" id="flat-demo-status">Loading precomputed outputs…</p>
+        </div>
       </div>
     </section>
 
